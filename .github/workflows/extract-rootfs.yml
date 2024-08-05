@@ -1,0 +1,81 @@
+name: Extract RootFS from Docker Image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-latest-arm64]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest-arm64" ]; then
+            sed -i 's/FROM vineelsai\/arch:latest/FROM vineelsai\/arch:arm64/g' Dockerfile
+            echo "Building for arm64"
+          else
+            echo "Building for amd64"
+          fi
+
+          cat Dockerfile
+          docker build . -t arch
+
+      - name: Extract RootFS
+        run: |
+          docker create --name arch arch echo "Arch Linux"
+          docker export -o rootfs.$(dpkg --print-architecture).tar arch
+          gzip rootfs.$(dpkg --print-architecture).tar
+          docker rm arch
+
+      - name: Set Vars
+        id: vars
+        run: |
+          echo "arch=$(dpkg --print-architecture)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload RootFS
+        uses: actions/upload-artifact@v4
+        with:
+          name: rootfs.${{ steps.vars.outputs.arch }}
+          path: rootfs.*.tar.gz
+
+  release:
+    name: Release
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download RootFS
+        id: download-rootfs
+        uses: actions/download-artifact@v4
+        with:
+          path: rootfs
+          pattern: rootfs.*
+          merge-multiple: true
+
+      - name: List Files
+        run: ls -R ${{ steps.download-rootfs.outputs.download-path }}
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            ${{ steps.download-rootfs.outputs.download-path }}/*.tar.gz
