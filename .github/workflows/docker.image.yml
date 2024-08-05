@@ -4,13 +4,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, ubuntu-latest-arm64]
-        arch: [amd64, arm64]
-
-    runs-on: ${{ matrix.os }}
+  build-and-push:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -30,11 +25,10 @@ jobs:
         run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/arch:${{ matrix.arch }}-latest
-            ${{ secrets.DOCKER_USERNAME }}/arch:${{ matrix.arch }}-${{ env.DATE }}
+            ${{ secrets.DOCKER_USERNAME }}/arch:latest
+            ${{ secrets.DOCKER_USERNAME }}/arch:${{ env.DATE }}

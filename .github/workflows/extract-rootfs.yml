@@ -1,21 +1,14 @@
 name: Extract RootFS from Docker Image
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
     tags:
       - v*
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, ubuntu-latest-arm64]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Check out
         uses: actions/checkout@v4
@@ -28,33 +21,22 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest-arm64" ]; then
-            sed -i 's/FROM spa5k\/arch:latest/FROM spa5k\/arch:arm64/g' Dockerfile
-            echo "Building for arm64"
-          else
-            echo "Building for amd64"
-          fi
-
+          echo "Building Docker Image"
           cat Dockerfile
           docker build . -t arch
 
       - name: Extract RootFS
         run: |
           docker create --name arch arch echo "Arch Linux"
-          docker export -o rootfs.$(dpkg --print-architecture).tar arch
-          gzip rootfs.$(dpkg --print-architecture).tar
+          docker export -o rootfs.tar arch
+          gzip rootfs.tar
           docker rm arch
-
-      - name: Set Vars
-        id: vars
-        run: |
-          echo "arch=$(dpkg --print-architecture)" >> "$GITHUB_OUTPUT"
 
       - name: Upload RootFS
         uses: actions/upload-artifact@v4
         with:
-          name: rootfs-${{ steps.vars.outputs.arch }}
-          path: rootfs.*.tar.gz
+          name: rootfs
+          path: rootfs.tar.gz
 
   release:
     name: Release
@@ -62,19 +44,11 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - name: Download RootFS for amd64
-        if: matrix.os == 'ubuntu-latest'
+      - name: Download RootFS
         uses: actions/download-artifact@v4
         with:
-          name: rootfs-amd64
-          path: rootfs/amd64
-
-      - name: Download RootFS for arm64
-        if: matrix.os == 'ubuntu-latest-arm64'
-        uses: actions/download-artifact@v4
-        with:
-          name: rootfs-arm64
-          path: rootfs/arm64
+          name: rootfs
+          path: rootfs
 
       - name: List Files
         run: ls -R rootfs
@@ -84,5 +58,4 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            rootfs/amd64/*.tar.gz
-            rootfs/arm64/*.tar.gz
+            rootfs/*.tar.gz
