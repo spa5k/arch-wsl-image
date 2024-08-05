@@ -65,10 +65,7 @@ jobs:
         run: ls -R rootfs
 
       - name: Create GitHub Release
-        uses: marvinpinto/action-automatic-releases@latest
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ github.ref }}
-          prerelease: false
-          files: |
-            rootfs/rootfs.tar.gz
+        run: |
+          gh release create ${{ env.DATE }} rootfs/rootfs.tar.gz --title "Release ${{ env.DATE }}" --notes "Release ${{ env.DATE }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
