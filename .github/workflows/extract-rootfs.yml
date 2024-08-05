@@ -19,11 +19,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker Image
+      - name: Pull Docker Image
         run: |
-          echo "Building Docker Image"
-          cat Dockerfile
-          docker build . -t arch
+          echo "Pulling spa5k/arch image"
+          docker pull spa5k/arch:latest
+
+      - name: Extract RootFS
+        run: |
+          docker create --name arch spa5k/arch echo "Arch Linux"
+          docker export -o rootfs.tar arch
+          gzip rootfs.tar
+          docker rm arch
 
       - name: Extract RootFS
         run: |
