@@ -44,7 +44,7 @@ jobs:
 
       - name: Extract RootFS
         run: |
-          docker create --name arch arch echo "Arch Linux"
+          docker create --name arch ${{ secrets.DOCKER_USERNAME }}/arch:latest echo "Arch Linux"
           docker export -o rootfs.tar arch
           gzip rootfs.tar
           docker rm arch
