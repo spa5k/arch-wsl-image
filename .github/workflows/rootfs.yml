@@ -64,11 +64,11 @@ jobs:
       - name: List Files
         run: ls -R rootfs
 
-      - uses: "marvinpinto/action-automatic-releases@latest"
+      - name: Create GitHub Release
+        uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: ${{ github.ref }}
           prerelease: false
-          tag_name: ${{ env.DATE }}
-          release_name: ${{ env.DATE }}
           files: |
-            rootfs/*.tar.gz
+            rootfs/rootfs.tar.gz
