@@ -1,13 +1,16 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-latest-arm64]
+        arch: [amd64, arm64]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
@@ -31,6 +34,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/${{ matrix.arch }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/your-image-name:latest
-            ${{ secrets.DOCKER_USERNAME }}/your-image-name:${{ env.DATE }}
+            ${{ secrets.DOCKER_USERNAME }}/arch:${{ matrix.arch }}-latest
+            ${{ secrets.DOCKER_USERNAME }}/arch:${{ matrix.arch }}-${{ env.DATE }}

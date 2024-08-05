@@ -29,7 +29,7 @@ jobs:
       - name: Build Docker Image
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest-arm64" ]; then
-            sed -i 's/FROM vineelsai\/arch:latest/FROM vineelsai\/arch:arm64/g' Dockerfile
+            sed -i 's/FROM spa5k\/arch:latest/FROM spa5k\/arch:arm64/g' Dockerfile
             echo "Building for arm64"
           else
             echo "Building for amd64"
@@ -53,7 +53,7 @@ jobs:
       - name: Upload RootFS
         uses: actions/upload-artifact@v4
         with:
-          name: rootfs.${{ steps.vars.outputs.arch }}
+          name: rootfs-${{ steps.vars.outputs.arch }}
           path: rootfs.*.tar.gz
 
   release:
@@ -62,20 +62,27 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - name: Download RootFS
-        id: download-rootfs
+      - name: Download RootFS for amd64
+        if: matrix.os == 'ubuntu-latest'
         uses: actions/download-artifact@v4
         with:
-          path: rootfs
-          pattern: rootfs.*
-          merge-multiple: true
+          name: rootfs-amd64
+          path: rootfs/amd64
+
+      - name: Download RootFS for arm64
+        if: matrix.os == 'ubuntu-latest-arm64'
+        uses: actions/download-artifact@v4
+        with:
+          name: rootfs-arm64
+          path: rootfs/arm64
 
       - name: List Files
-        run: ls -R ${{ steps.download-rootfs.outputs.download-path }}
+        run: ls -R rootfs
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            ${{ steps.download-rootfs.outputs.download-path }}/*.tar.gz
+            rootfs/amd64/*.tar.gz
+            rootfs/arm64/*.tar.gz
