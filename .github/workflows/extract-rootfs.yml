@@ -31,13 +31,6 @@ jobs:
           gzip rootfs.tar
           docker rm arch
 
-      - name: Extract RootFS
-        run: |
-          docker create --name arch arch echo "Arch Linux"
-          docker export -o rootfs.tar arch
-          gzip rootfs.tar
-          docker rm arch
-
       - name: Upload RootFS
         uses: actions/upload-artifact@v4
         with:
