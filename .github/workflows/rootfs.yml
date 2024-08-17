@@ -5,13 +5,19 @@ on:
   push:
     tags:
       - v*
+  schedule:
+    - cron: '0 0 * * 0'  # Runs at 00:00 UTC every Sunday
 
 permissions:
   contents: write
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-latest-arm64]
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
@@ -36,8 +42,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/arch:latest
-            ${{ secrets.DOCKER_USERNAME }}/arch:${{ env.DATE }}
+            ${{ secrets.DOCKER_USERNAME }}/arch:latest-${{ matrix.arch }}
+            ${{ secrets.DOCKER_USERNAME }}/arch:${{ env.DATE }}-${{ matrix.arch }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -47,28 +53,48 @@ jobs:
 
       - name: Extract RootFS
         run: |
-          docker create --name arch ${{ secrets.DOCKER_USERNAME }}/arch:latest echo "Arch Linux"
-          docker export -o rootfs.tar arch
-          gzip rootfs.tar
+          docker create --name arch ${{ secrets.DOCKER_USERNAME }}/arch:latest-${{ matrix.arch }} echo "Arch Linux"
+          docker export -o rootfs-${{ matrix.arch }}.tar arch
+          gzip rootfs-${{ matrix.arch }}.tar
           docker rm arch
 
       - name: Upload RootFS
         uses: actions/upload-artifact@v4
         with:
-          name: rootfs
-          path: rootfs.tar.gz
+          name: rootfs-${{ matrix.arch }}
+          path: rootfs-${{ matrix.arch }}.tar.gz
 
       - name: Download RootFS
         uses: actions/download-artifact@v4
         with:
-          name: rootfs
+          name: rootfs-${{ matrix.arch }}
           path: rootfs
 
       - name: List Files
         run: ls -R rootfs
 
+  release:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download RootFS amd64
+        uses: actions/download-artifact@v4
+        with:
+          name: rootfs-amd64
+          path: rootfs
+
+      - name: Download RootFS arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: rootfs-arm64
+          path: rootfs
+
       - name: Create GitHub Release
         run: |
-          gh release create ${{ env.DATE }} rootfs/rootfs.tar.gz --title "Release ${{ env.DATE }}" --notes "Release ${{ env.DATE }}"
+          gh release create ${{ env.DATE }} rootfs/rootfs-amd64.tar.gz rootfs/rootfs-arm64.tar.gz --title "Release ${{ env.DATE }}" --notes "Release ${{ env.DATE }} for architectures amd64 and arm64"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
