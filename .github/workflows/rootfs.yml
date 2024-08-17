@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  build-and-push:
+  build-and-push-amd64:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,15 +35,15 @@ jobs:
         id: date
         run: echo "DATE=$(date +'%Y%m%d%H%M')" >> $GITHUB_ENV
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image for amd64
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/arch:latest
-            ${{ secrets.DOCKER_USERNAME }}/arch:${{ env.DATE }}
+            ${{ secrets.DOCKER_USERNAME }}/arch:latest-amd64
+            ${{ secrets.DOCKER_USERNAME }}/arch:${{ env.DATE }}-amd64
 
       - name: Extract RootFS for amd64
         run: |
@@ -52,18 +52,51 @@ jobs:
           gzip rootfs-amd64.tar
           docker rm arch-amd64
 
+      - name: Upload RootFS amd64
+        uses: actions/upload-artifact@v4
+        with:
+          name: rootfs-amd64
+          path: rootfs-amd64.tar.gz
+
+  build-and-push-arm64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract current date and time
+        id: date
+        run: echo "DATE=$(date +'%Y%m%d%H%M')" >> $GITHUB_ENV
+
+      - name: Build and push Docker image for arm64
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/arch:latest-arm64
+            ${{ secrets.DOCKER_USERNAME }}/arch:${{ env.DATE }}-arm64
+
       - name: Extract RootFS for arm64
         run: |
           docker create --name arch-arm64 ${{ secrets.DOCKER_USERNAME }}/arch:latest-arm64 echo "Arch Linux"
           docker export -o rootfs-arm64.tar arch-arm64
           gzip rootfs-arm64.tar
           docker rm arch-arm64
-
-      - name: Upload RootFS amd64
-        uses: actions/upload-artifact@v4
-        with:
-          name: rootfs-amd64
-          path: rootfs-amd64.tar.gz
 
       - name: Upload RootFS arm64
         uses: actions/upload-artifact@v4
@@ -72,7 +105,7 @@ jobs:
           path: rootfs-arm64.tar.gz
 
   release:
-    needs: build-and-push
+    needs: [build-and-push-amd64, build-and-push-arm64]
     runs-on: ubuntu-latest
 
     steps:
