@@ -16,7 +16,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, ubuntu-latest-arm64]
-        arch: [amd64, arm64]
     runs-on: ${{ matrix.os }}
 
     steps:
