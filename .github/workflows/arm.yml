@@ -27,8 +27,7 @@ jobs:
       - name: Download Arch Linux ARM tarball
         run: |
           curl -LO http://os.archlinuxarm.org/os/ArchLinuxARM-armv7-latest.tar.gz
-          echo "d41d8cd98f00b204e9800998ecf8427e  ArchLinuxARM-armv7-latest.tar.gz" > sha256sums.txt
-          sha256sum -c sha256sums.txt
+
       - name: Extract current date and time
         id: date
         run: echo "DATE=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
