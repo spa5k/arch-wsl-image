@@ -1,9 +1,10 @@
 name: Build and Publish Docker Image
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
+    tags:
+      - v*
   schedule:
     - cron: '0 0 * * 0'  # Runs at 00:00 UTC every Sunday
 
