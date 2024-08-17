@@ -1,5 +1,5 @@
 # Stage 1: Verification
-FROM alpine:3.19 AS verify
+FROM alpine:3.20 AS verify
 COPY ArchLinuxARM-armv7-latest.tar.gz /rootfs.tar.gz
 
 RUN apk add --no-cache curl tar zstd && \
