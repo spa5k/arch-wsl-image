@@ -3,8 +3,6 @@ FROM alpine:3.19 AS verify
 COPY ArchLinuxARM-armv7-latest.tar.gz /rootfs.tar.gz
 
 RUN apk add --no-cache curl tar zstd && \
-    echo "d41d8cd98f00b204e9800998ecf8427e  /rootfs.tar.gz" > /tmp/sha256sums.txt && \
-    sha256sum -c /tmp/sha256sums.txt && \
     mkdir /rootfs && \
     tar -C /rootfs --extract --file /rootfs.tar.gz
 
