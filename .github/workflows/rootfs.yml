@@ -12,15 +12,12 @@ permissions:
   contents: write
 
 jobs:
-  build-push-release:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -33,58 +30,47 @@ jobs:
 
       - name: Extract current date and time
         id: date
-        run: echo "DATE=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+        run: echo "DATE=$(date +'%Y%m%d%H%M')" >> $GITHUB_ENV
 
-      - name: Build and push Docker image for multiple platforms
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/arch:latest
-            ${{ secrets.DOCKER_USERNAME }}/arch:${{ steps.date.outputs.DATE }}
+            ${{ secrets.DOCKER_USERNAME }}/arch:${{ env.DATE }}
 
-      - name: Extract RootFS for amd64
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract RootFS
         run: |
-          docker create --name arch-amd64 ${{ secrets.DOCKER_USERNAME }}/arch:latest-amd64 echo "Arch Linux"
-          docker export -o rootfs-amd64.tar arch-amd64
-          gzip rootfs-amd64.tar
-          docker rm arch-amd64
+          docker create --name arch ${{ secrets.DOCKER_USERNAME }}/arch:latest echo "Arch Linux"
+          docker export -o rootfs.tar arch
+          gzip rootfs.tar
+          docker rm arch
 
-      - name: Extract RootFS for arm64
-        run: |
-          docker create --name arch-arm64 ${{ secrets.DOCKER_USERNAME }}/arch:latest-arm64 echo "Arch Linux"
-          docker export -o rootfs-arm64.tar arch-arm64
-          gzip rootfs-arm64.tar
-          docker rm arch-arm64
-
-      - name: Upload RootFS amd64
+      - name: Upload RootFS
         uses: actions/upload-artifact@v4
         with:
-          name: rootfs-amd64
-          path: rootfs-amd64.tar.gz
+          name: rootfs
+          path: rootfs.tar.gz
 
-      - name: Upload RootFS arm64
-        uses: actions/upload-artifact@v4
-        with:
-          name: rootfs-arm64
-          path: rootfs-arm64.tar.gz
-
-      - name: Download RootFS amd64
+      - name: Download RootFS
         uses: actions/download-artifact@v4
         with:
-          name: rootfs-amd64
+          name: rootfs
           path: rootfs
 
-      - name: Download RootFS arm64
-        uses: actions/download-artifact@v4
-        with:
-          name: rootfs-arm64
-          path: rootfs
+      - name: List Files
+        run: ls -R rootfs
 
       - name: Create GitHub Release
         run: |
-          gh release create ${{ steps.date.outputs.DATE }} rootfs/rootfs-amd64.tar.gz rootfs/rootfs-arm64.tar.gz --title "${{ steps.date.outputs.DATE }}" --notes "Release ${{ steps.date.outputs.DATE }} for architectures amd64 and arm64"
+          gh release create ${{ env.DATE }} rootfs/rootfs.tar.gz --title "Release ${{ env.DATE }}" --notes "Release ${{ env.DATE }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
