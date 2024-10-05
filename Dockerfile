@@ -15,14 +15,17 @@ RUN /setup.sh
 # Remove the setup script to clean up
 RUN rm /setup.sh
 
-# Add the intial_run.sh script into the container
-COPY intial_run.sh /intial_run.sh
+# Create a scripts directory
+RUN mkdir -p /scripts
 
-# Ensure the intial_run.sh script has execute permissions
-RUN chmod +x /intial_run.sh
+# Copy the initial_run.sh script into the scripts directory
+COPY initial_run.sh /scripts/initial_run.sh
 
-# Add the startup.sh script into the container
-COPY startup.sh /startup.sh
+# Ensure the initial_run.sh script has execute permissions
+RUN chmod +x /scripts/initial_run.sh
+
+# Copy the startup.sh script into the scripts directory
+COPY startup.sh /scripts/startup.sh
 
 # Ensure the startup.sh script has execute permissions
-RUN chmod +x /startup.sh
+RUN chmod +x /scripts/startup.sh

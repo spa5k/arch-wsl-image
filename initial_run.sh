@@ -43,7 +43,7 @@ echo "default=$NEW_USER" >> /etc/wsl.conf
 # Set startup script
 echo "Configuring startup script..."
 echo "[boot]" >> /etc/wsl.conf
-echo "command = /home/$NEW_USER/startup.sh" >> /etc/wsl.conf
+echo "command = /scripts/startup.sh" >> /etc/wsl.conf
 
 # Copy startup script to user's home directory
 cp /path/to/startup.sh /home/$NEW_USER/startup.sh
