@@ -34,7 +34,6 @@ pacman -S --noconfirm sudo nano vim git wget curl glibc paru htop net-tools open
 echo "Configuring WSL..."
 echo "[boot]" > /etc/wsl.conf
 echo "systemd=true" >> /etc/wsl.conf
-echo "command=/scripts/startup.sh" >> /etc/wsl.conf
 touch /etc/machine-id
 echo "%wheel        ALL=(ALL)       ALL" >> /etc/sudoers
 

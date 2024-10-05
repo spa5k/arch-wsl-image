@@ -24,3 +24,11 @@ image-%: $(OUTPUTDIR)/Dockerfile.%
 .PHONY: build
 build:
 	docker build -t arch-wsl .
+
+extract:
+	make build
+	docker create --name arch-wsl arch-wsl
+	docker export arch-wsl -o arch-wsl.tar
+	gzip arch-wsl.tar
+	docker rm arch-wsl
+	docker rmi arch-wsl

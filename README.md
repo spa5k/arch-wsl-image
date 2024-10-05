@@ -19,7 +19,7 @@ wsl -d arch
 4. Run the initial setup script:
 
 ```
-/initial_run.sh
+chmod +x /scripts/initial_run.sh && /scripts/initial_run.sh
 ```
 
 5. After adding your user, you can use the following command to start the WSL distribution:
