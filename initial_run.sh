@@ -42,13 +42,6 @@ echo "default=$NEW_USER" >> /etc/wsl.conf
 
 # Set startup script
 echo "Configuring startup script..."
-echo "[boot]" >> /etc/wsl.conf
-echo "command = /scripts/startup.sh" >> /etc/wsl.conf
-
-# Copy startup script to user's home directory
-cp /path/to/startup.sh /home/$NEW_USER/startup.sh
-chown $NEW_USER:$NEW_USER /home/$NEW_USER/startup.sh
-chmod +x /home/$NEW_USER/startup.sh
 
 # Set timezone (Optional)
 echo "Setting timezone..."
@@ -58,6 +51,10 @@ hwclock --systohc
 # Install additional packages if needed
 echo "Installing additional packages..."
 pacman -S --noconfirm htop tmux zsh man-db neofetch reflector
+
+# Set ZSH as default shell
+echo "Setting ZSH as the default shell..."
+chsh -s /bin/zsh $NEW_USER
 
 # Success message
 echo "User $NEW_USER created and basic packages installed!"
