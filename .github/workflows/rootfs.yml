@@ -55,13 +55,13 @@ jobs:
           docker rm arch
 
       - name: Upload RootFS
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: rootfs
           path: rootfs.tar.gz
 
       - name: Download RootFS
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: rootfs
           path: rootfs
